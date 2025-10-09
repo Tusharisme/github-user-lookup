@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub User Creation Date Lookup</title>
+    <style>
+        /* CSS Variables for theming and consistency */
+        :root {
+            --primary-color: #2c3e50; /* Dark blue-gray for headings, main text */
+            --secondary-color: #3498db; /* Bright blue for accents, buttons */
+            --accent-color: #e74c3c; /* Red for errors */
+            --success-color: #27ae60; /* Green for success messages */
+            --background-color: #f4f7f6; /* Light gray for body background */
+            --card-background-color: #ffffff; /* White for card backgrounds */
+            --text-color: #333; /* Dark gray for general text */
+            --border-color: #ddd; /* Light gray for borders */
+            --shadow-color: rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+
+        /* Basic Reset and Body Styling */
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top to prevent content jump on height change */
+            min-height: 100vh;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Main Container for the Application */
+        .container {
+            background-color: var(--card-background-color);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            max-width: 600px; /* Max width for readability */
+            width: 100%; /* Full width up to max-width */
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Heading Styling */
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 2em; /* Relative font size */
+        }
+
+        /* Form Styling */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between form elements */
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            width: 100%;
+            max-width: 400px; /* Constrain input width */
+            text-align: left;
+        }
+
+        label {
+            display: block; /* Make label occupy its own line */
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions for focus */
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); /* Focus ring */
+            outline: none; /* Remove default outline */
+        }
+
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth button effects */
+            width: 100%;
+            max-width: 200px; /* Constrain button width */
+        }
+
+        button:hover {
+            background-color: #2980b9; /* Darker shade on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none; /* No lift effect when disabled */
+        }
+
+        /* Result Area Styling */
+        #result-area {
+            min-height: 80px; /* Reserve space to prevent layout shifts */
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #fdfdfd; /* Slightly off-white for distinction */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #message {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        #creation-date {
+            font-size: 1.2em;
+            color: var(--success-color); /* Green for successful date */
+            font-weight: bold;
+        }
+
+        /* Specific Message Styles */
+        .error-message {
+            color: var(--accent-color); /* Red for errors */
+            font-weight: bold;
+        }
+
+        .loading-message {
+            color: var(--secondary-color); /* Blue for loading */
+            font-style: italic;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.75em;
+            }
+
+            button {
+                padding: 10px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            input[type="text"], button {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <h1>GitHub Account Creation Date</h1>
+
+        <form id="github-user-form">
+            <div class="form-group">
+                <label for="github-user-input">GitHub Username:</label>
+                <!-- The ID of this input will be dynamically updated by JavaScript -->
+                <input type="text" id="github-user-input" name="username" placeholder="e.g., octocat" required aria-describedby="message">
+            </div>
+            <button type="submit" id="submit-button">Get Creation Date</button>
+        </form>
+
+        <section id="result-area" aria-live="polite">
+            <p id="message">Enter a GitHub username above to find their account creation date.</p>
+            <p id="creation-date"></p>
+        </section>
+    </main>
+
+    <script>
+        // Generate a random seed for the input ID, as requested by the brief.
+        // Using a 6-digit number for simplicity to ensure uniqueness.
+        const seed = Math.floor(Math.random() * 900000) + 100000;
+        const githubUserInputId = `github-user-${seed}`;
+
+        // Get references to DOM elements
+        const form = document.getElementById('github-user-form');
+        const githubUserInput = document.getElementById('github-user-input');
+        const submitButton = document.getElementById('submit-button');
+        const messageElement = document.getElementById('message');
+        const creationDateElement = document.getElementById('creation-date');
+
+        // Dynamically set the ID of the input element and update its corresponding label
+        githubUserInput.id = githubUserInputId;
+        const labelForInput = document.querySelector(`label[for="github-user-input"]`);
+        if (labelForInput) {
+            labelForInput.setAttribute('for', githubUserInputId);
+        }
+
+        /**
+         * Displays a message in the result area, clearing previous date info.
+         * @param {string} text - The message to display.
+         * @param {boolean} [isError=false] - True if the message is an error.
+         * @param {boolean} [isLoading=false] - True if the message indicates loading.
+         */
+        function displayMessage(text, isError = false, isLoading = false) {
+            messageElement.textContent = text;
+            messageElement.className = ''; // Reset classes
+            if (isError) {
+                messageElement.classList.add('error-message');
+            } else if (isLoading) {
+                messageElement.classList.add('loading-message');
+            }
+            creationDateElement.textContent = ''; // Clear previous date info
+        }
+
+        /**
+         * Displays the formatted creation date.
+         * @param {string} dateString - The formatted date (YYYY-MM-DD).
+         */
+        function displayCreationDate(dateString) {
+            messageElement.textContent = 'Account created on:';
+            messageElement.className = ''; // Clear message specific classes
+            creationDateElement.textContent = dateString;
+            creationDateElement.className = ''; // Clear any previous date specific classes
+        }
+
+        // Add event listener for form submission
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission to handle it with JavaScript
+
+            const username = githubUserInput.value.trim();
+
+            if (!username) {
+                displayMessage('Please enter a GitHub username.', true);
+                return;
+            }
+
+            displayMessage('Loading...', false, true); // Show loading indicator
+            submitButton.disabled = true; // Disable button to prevent multiple submissions
+
+            let controller = new AbortController();
+            const signal = controller.signal;
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // Abort request after 5 seconds
+
+            try {
+                // Check for a GitHub API token in the URL query parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const githubToken = urlParams.get('token');
+
+                const headers = {
+                    'Accept': 'application/vnd.github.v3+json' // Specify GitHub API version
+                };
+                if (githubToken) {
+                    headers['Authorization'] = `token ${githubToken}`; // Add Authorization header if token exists
+                }
+
+                const response = await fetch(`https://api.github.com/users/${username}`, {
+                    headers: headers,
+                    signal: signal // Attach the abort signal to the fetch request
+                });
+
+                clearTimeout(timeoutId); // Clear the timeout if fetch resolves before 5 seconds
+
+                if (!response.ok) {
+                    let errorMessage = 'Could not fetch user data.';
+                    if (response.status === 404) {
+                        errorMessage = `GitHub user "${username}" not found.`;
+                    } else if (response.status === 403) {
+                        const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+                        if (rateLimitRemaining === '0') {
+                            errorMessage = 'API rate limit exceeded. Please try again later or provide a token in the URL (e.g., ?token=YOUR_TOKEN).';
+                        } else {
+                            errorMessage = `GitHub API error: ${response.status} ${response.statusText}.`;
+                        }
+                    } else {
+                        errorMessage = `GitHub API error: ${response.status} ${response.statusText}.`;
+                    }
+                    displayMessage(errorMessage, true);
+                    return;
+                }
+
+                const data = await response.json();
+                const createdAt = data.created_at; // e.g., "2008-01-14T04:33:33Z"
+
+                // Format the date to YYYY-MM-DD in UTC
+                const date = new Date(createdAt);
+                // toISOString() provides a UTC string, split at 'T' gets the date part
+                const formattedDate = date.toISOString().split('T')[0];
+
+                displayCreationDate(formattedDate);
+
+            } catch (error) {
+                clearTimeout(timeoutId); // Ensure timeout is cleared on any error as well
+                if (error.name === 'AbortError') {
+                    displayMessage('Request timed out after 5 seconds. Please try again.', true);
+                } else {
+                    console.error('Fetch error:', error);
+                    displayMessage('An unexpected error occurred. Please try again.', true);
+                }
+            } finally {
+                submitButton.disabled = false; // Re-enable button after request completes or fails
+            }
+        });
+    </script>
+</body>
+</html>
