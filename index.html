@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub User Creation Date Lookup</title>
+    <meta name="description" content="Look up a GitHub user's account creation date.">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --border-color: #ced4da;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --spacing: 1rem;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: var(--spacing) 5%;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top */
+            padding: var(--spacing);
+        }
+
+        section {
+            background-color: white;
+            padding: calc(var(--spacing) * 1.5);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            width: 100%;
+            margin-top: calc(var(--spacing) * 2); /* Push section down a bit */
+            box-sizing: border-box;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing);
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        input[type="text"] {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        button {
+            padding: 0.75rem 1.25rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            align-self: flex-start; /* Align button to start within flex container */
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            background-color: #004085;
+        }
+
+        button:disabled {
+            background-color: var(--secondary-color);
+            cursor: not-allowed;
+        }
+
+        #result, #error {
+            margin-top: calc(var(--spacing) * 1.5);
+            padding: var(--spacing);
+            border-radius: 4px;
+            min-height: 2.5em; /* Ensure consistent height for accessibility */
+        }
+
+        #result {
+            background-color: #e9f7ef; /* Light green for success */
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            font-weight: bold;
+            display: none; /* Hidden by default */
+        }
+
+        #error {
+            background-color: #fbecec; /* Light red for error */
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            display: none; /* Hidden by default */
+        }
+
+        #result.visible, #error.visible {
+            display: block;
+        }
+
+        footer {
+            margin-top: auto; /* Pushes footer to the bottom */
+            background-color: var(--secondary-color);
+            color: white;
+            text-align: center;
+            padding: var(--spacing) 5%;
+            font-size: 0.9em;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5em;
+            }
+            section {
+                padding: var(--spacing);
+                margin-top: var(--spacing);
+            }
+            button {
+                width: 100%; /* Full width button on small screens */
+                align-self: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GitHub User Account Creation Date</h1>
+    </header>
+    <main>
+        <section>
+            <form id="userLookupForm">
+                <label for="github-user-20231120">GitHub Username:</label>
+                <input type="text" id="github-user-20231120" name="username" required placeholder="e.g., octocat">
+                <button type="submit" id="lookupButton">Lookup</button>
+            </form>
+            <div id="result" aria-live="polite"></div>
+            <div id="error" aria-live="assertive"></div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 GitHub User Lookup. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const seed = "20231120"; // Consistent seed as required by the brief
+        const githubUserInput = document.getElementById(`github-user-${seed}`);
+        const userLookupForm = document.getElementById('userLookupForm');
+        const lookupButton = document.getElementById('lookupButton');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+
+        /**
+         * Clears previous results and error messages.
+         */
+        function clearMessages() {
+            resultDiv.textContent = '';
+            resultDiv.classList.remove('visible');
+            errorDiv.textContent = '';
+            errorDiv.classList.remove('visible');
+        }
+
+        /**
+         * Displays a success message.
+         * @param {string} message - The message to display.
+         */
+        function showSuccess(message) {
+            clearMessages();
+            resultDiv.textContent = message;
+            resultDiv.classList.add('visible');
+            resultDiv.focus(); // Focus for screen readers
+        }
+
+        /**
+         * Displays an error message.
+         * @param {string} message - The message to display.
+         */
+        function showError(message) {
+            clearMessages();
+            errorDiv.textContent = message;
+            errorDiv.classList.add('visible');
+            errorDiv.focus(); // Focus for screen readers
+        }
+
+        /**
+         * Parses URL query parameters.
+         * @returns {URLSearchParams} - The URLSearchParams object.
+         */
+        function getQueryParams() {
+            return new URLSearchParams(window.location.search);
+        }
+
+        /**
+         * Handles the form submission to fetch GitHub user data.
+         * @param {Event} event - The form submission event.
+         */
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            clearMessages();
+
+            const username = githubUserInput.value.trim();
+            if (!username) {
+                showError('Please enter a GitHub username.');
+                return;
+            }
+
+            lookupButton.disabled = true;
+            lookupButton.textContent = 'Looking up...';
+            resultDiv.textContent = 'Fetching data...';
+            resultDiv.classList.add('visible');
+
+            const queryParams = getQueryParams();
+            const token = queryParams.get('token');
+
+            const headers = new Headers();
+            if (token) {
+                headers.append('Authorization', `token ${token}`);
+            }
+            // GitHub API Best Practices: Set User-Agent header
+            headers.append('User-Agent', 'GitHub-User-Creation-Date-App');
+
+            const url = `https://api.github.com/users/${username}`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort(); // Abort the fetch request after 5 seconds
+            }, 5000); // 5000 milliseconds = 5 seconds
+
+            try {
+                const response = await fetch(url, { signal: controller.signal, headers: headers });
+                clearTimeout(timeoutId); // Clear the timeout if fetch resolves within 5 seconds
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showError(`GitHub user "${username}" not found.`);
+                    } else if (response.status === 403 && token) {
+                        const errorData = await response.json();
+                        showError(`API Error: Forbidden. Check your token and rate limits. ${errorData.message || ''}`);
+                    } else if (response.status === 403) {
+                         // This is often a rate limit error for unauthenticated requests
+                        showError(`API Error: Rate limit exceeded for unauthenticated requests. Please provide a token in the URL (e.g., ?token=YOUR_TOKEN).`);
+                    }
+                    else {
+                        showError(`GitHub API error: ${response.status} ${response.statusText}`);
+                    }
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.created_at) {
+                    // Parse date and format to YYYY-MM-DD UTC
+                    const creationDate = new Date(data.created_at);
+                    const utcDate = creationDate.toISOString().split('T')[0]; // Gets YYYY-MM-DD
+                    showSuccess(`User "${username}" was created on: ${utcDate} (UTC)`);
+                } else {
+                    showError('Could not retrieve creation date for this user.');
+                }
+
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    showError('Request timed out after 5 seconds. Please check your network or try again.');
+                } else {
+                    showError(`Network or API call failed: ${error.message}`);
+                }
+            } finally {
+                lookupButton.disabled = false;
+                lookupButton.textContent = 'Lookup';
+            }
+        }
+
+        userLookupForm.addEventListener('submit', handleFormSubmit);
+    </script>
+</body>
+</html>
